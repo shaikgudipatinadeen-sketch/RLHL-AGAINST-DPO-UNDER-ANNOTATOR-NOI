@@ -1,0 +1,93 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyMgt5CTHyuJ+DaYHhmXLKrD",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/shaikgudipatinadeen-sketch/RLHL-AGAINST-DPO-UNDER-ANNOTATOR-NOI/blob/main/RLHL%20AGAINST%20DPO%20UNDER%20ANNOTATOR%20NOISE\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "oAqbhM5F0_XE",
+        "outputId": "8aa16d24-6053-4a34-bb6b-3607e188790e"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Noise 0.0: 996 pairs, 1.000 agree with the gold reward\n",
+            "Noise 0.1: 995 pairs, 0.893 agree with the gold reward\n",
+            "Noise 0.3: 996 pairs, 0.700 agree with the gold reward\n"
+          ]
+        }
+      ],
+      "source": [
+        "\n",
+        "import numpy as np\n",
+        "\n",
+        "rng = np.random.default_rng(0)\n",
+        "\n",
+        "# Gold rewards of 200 candidate answers\n",
+        "gold = rng.normal(size=200)\n",
+        "\n",
+        "def annotate(n_pairs, noise):\n",
+        "    \"\"\"Simulate annotator preferences with noise.\"\"\"\n",
+        "    i, j = rng.integers(0, len(gold), (2, n_pairs))\n",
+        "\n",
+        "    # Remove pairs containing the same answer\n",
+        "    keep = i != j\n",
+        "    i, j = i[keep], j[keep]\n",
+        "\n",
+        "    # Annotator sometimes selects the worse answer\n",
+        "    pick_i = (gold[i] > gold[j]) ^ (\n",
+        "        rng.random(len(i)) < noise\n",
+        "    )\n",
+        "\n",
+        "    winner = np.where(pick_i, i, j)\n",
+        "    loser = np.where(pick_i, j, i)\n",
+        "\n",
+        "    return winner, loser\n",
+        "\n",
+        "\n",
+        "# Test three levels of annotator noise\n",
+        "for noise in (0.0, 0.1, 0.3):\n",
+        "    winner, loser = annotate(1000, noise)\n",
+        "\n",
+        "    # Measure agreement with the gold reward\n",
+        "    agree = np.mean(gold[winner] > gold[loser])\n",
+        "\n",
+        "    print(\n",
+        "        f\"Noise {noise:.1f}: \"\n",
+        "        f\"{len(winner)} pairs, \"\n",
+        "        f\"{agree:.3f} agree with the gold reward\"\n",
+        "    )\n"
+      ]
+    }
+  ]
+}
